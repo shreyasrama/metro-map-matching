@@ -1,0 +1,14 @@
+[project]
+name = "metro-map-matching"
+version = "0.1.0"
+description = "Map matching GTFS shapes of Christchurch Metro routes."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "dotenv>=0.9.9",
+    "folium>=0.20.0",
+    "ipykernel>=6.29.5",
+    "pandas>=2.3.0",
+    "polyline>=2.0.2",
+    "requests>=2.32.4",
+]

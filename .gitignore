@@ -1,0 +1,10 @@
+.venv
+.env
+*.ipynb
+*.json
+*.html
+
+gtfs/
+gtfs.zip
+
+gtfs_corrected_shapes.html
