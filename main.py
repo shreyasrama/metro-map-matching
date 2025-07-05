@@ -52,31 +52,59 @@ for shape_id, group in grouped_shapes:
 
 # Correcting code ---
 
-# Open uncorrected shapes and construct JSON to use with Valhalla map matching API
+# Construct JSON to use with Valhalla map matching API
 
-# TODO: fix
-# with open('gtfs/shapes.txt', newline='') as csvfile:
-#     reader = csv.DictReader(csvfile)
-#     points = []
+trace_route_headers = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache'
+}
 
-#     for row in reader:
-#         points.append({
-#             "lat": float(row["shape_pt_lat"]),
-#             "lon": float(row["shape_pt_lon"]),
-#             "type": "via"
-#         })
-#     if points:
-#         points[0]["type"] = "break"
-#         points[-1]["type"] = "break"
+counter = 0
+for shape_id, group in grouped_shapes:
+    points = []
+    for idx, row in group.iterrows():
+        points.append({
+            "lat": float(row["shape_pt_lat"]),
+            "lon": float(row["shape_pt_lon"]),
+            "type": "via"
+        })
 
-# trace_route_json = {
-#     "shape": points,
-#     "costing": "auto",
-#     "shape_match": "map_snap"
-# }
+        if points:
+            points[0]["type"] = "break"
+            points[-1]["type"] = "break"
 
-# with open('shapes.json', "w") as f:
-#     json.dump(trace_route_json, f, indent=2)
+    trace_route_json = {
+        "shape": points,
+        "costing": "bus",
+        "costing_options": {
+            "bus": {
+                "ignore_oneways": True,
+                "ignore_restrictions": True,
+                "ignore_access": True,
+                "private_access_penalty": 0
+            }
+        },
+        "shape_match": "map_snap"
+    }
+
+    mm_response = requests.post(
+        url=os.getenv('VALHALLA_URL')+'/trace_attributes',
+        headers=trace_route_headers,
+        data=json.dumps(trace_route_json)
+        #data=trace_route_json
+    )
+
+    matched_path = json.loads(mm_response.content)
+
+    #shape_points = polyline.decode(matched_path["trip"]["legs"][0]["shape"], precision=6)
+    shape_points = polyline.decode(matched_path["shape"], precision=6)
+    
+    # with open('shapes/shape_'+str(shape_id)+'.json', "w") as f:
+    #     json.dump(shape_points, f, indent=2)
+    
+    folium.PolyLine(shape_points, color="red", weight=2.5, opacity=1).add_to(m)
+    counter += 1
+logging.info('Processed', str(counter), 'entries')
 
 # Save map as HTML
 logging.info('Saving to gtfs_corrected_shapes.html')
