@@ -50,15 +50,13 @@ for shape_id, group in grouped_shapes:
     points = list(zip(group['shape_pt_lat'], group['shape_pt_lon']))
     folium.PolyLine(points, color="blue", weight=2.5, opacity=1).add_to(m)
 
-# Correcting code ---
-
 # Construct JSON to use with Valhalla map matching API
-
 trace_route_headers = {
     'Content-Type': 'application/json',
     'Cache-Control': 'no-cache'
 }
 
+logging.info('Starting map matching for %d shapes', len(grouped_shapes))
 counter = 0
 for shape_id, group in grouped_shapes:
     points = []
@@ -69,11 +67,13 @@ for shape_id, group in grouped_shapes:
             "type": "via"
         })
 
+        # Denote the first and last set of coords as break points for route
         if points:
             points[0]["type"] = "break"
             points[-1]["type"] = "break"
 
-    trace_route_json = {
+    # Use pretty permissive costing options so it doesn't try alternate routes
+    trace_attribute_json = {
         "shape": points,
         "costing": "bus",
         "costing_options": {
@@ -87,24 +87,17 @@ for shape_id, group in grouped_shapes:
         "shape_match": "map_snap"
     }
 
-    mm_response = requests.post(
+    trace_attribute_response = requests.post(
         url=os.getenv('VALHALLA_URL')+'/trace_attributes',
         headers=trace_route_headers,
-        data=json.dumps(trace_route_json)
-        #data=trace_route_json
+        data=json.dumps(trace_attribute_json)
     )
 
-    matched_path = json.loads(mm_response.content)
-
-    #shape_points = polyline.decode(matched_path["trip"]["legs"][0]["shape"], precision=6)
+    matched_path = json.loads(trace_attribute_response.content)
     shape_points = polyline.decode(matched_path["shape"], precision=6)
-    
-    # with open('shapes/shape_'+str(shape_id)+'.json', "w") as f:
-    #     json.dump(shape_points, f, indent=2)
-    
     folium.PolyLine(shape_points, color="red", weight=2.5, opacity=1).add_to(m)
+
     counter += 1
-logging.info('Processed', str(counter), 'entries')
 
 # Save map as HTML
 logging.info('Saving to gtfs_corrected_shapes.html')
