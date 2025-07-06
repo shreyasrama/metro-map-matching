@@ -1,11 +1,8 @@
 .venv
 .env
 *.json
-*.html
 
 custom_files/
 
 gtfs/
 gtfs.zip
-
-gtfs_corrected_shapes.html

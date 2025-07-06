@@ -37,7 +37,7 @@ logging.info('Unzipping to gtfs/')
 with zipfile.ZipFile(gtfs_zip, 'r') as zf:
     zf.extractall("gtfs")
 
-# Read shapes.txt into dataframe
+# Read shapes.txt into DataFrame
 shapes_df = pd.read_csv('gtfs/shapes.txt')
 grouped_shapes = shapes_df.groupby('shape_id')
 
@@ -57,7 +57,6 @@ trace_route_headers = {
 }
 
 logging.info('Starting map matching for %d shapes', len(grouped_shapes))
-counter = 0
 for shape_id, group in grouped_shapes:
     points = []
     for idx, row in group.iterrows():
@@ -93,11 +92,10 @@ for shape_id, group in grouped_shapes:
         data=json.dumps(trace_attribute_json)
     )
 
+    # Grab the encoded shape and plot on map
     matched_path = json.loads(trace_attribute_response.content)
     shape_points = polyline.decode(matched_path["shape"], precision=6)
     folium.PolyLine(shape_points, color="red", weight=2.5, opacity=1).add_to(m)
-
-    counter += 1
 
 # Save map as HTML
 logging.info('Saving to gtfs_corrected_shapes.html')
